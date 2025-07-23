@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-building mr-2 text-blue-600"></i>Liste des Sociétés
+        </h2>
+        <a href="{{ url_for('nouvelle_societe') }}" 
+           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>Nouvelle Société
+        </a>
+    </div>
+
+    {% if societes %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for societe in societes %}
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                <div class="flex items-start justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">{{ societe.nom }}</h3>
+                    <span class="text-xs text-gray-500">
+                        {{ societe.factures|length }} facture(s)
+                    </span>
+                </div>
+                
+                <div class="space-y-2 text-sm text-gray-600">
+                    {% if societe.adresse %}
+                    <p><i class="fas fa-map-marker-alt mr-2"></i>{{ societe.adresse }}</p>
+                    {% endif %}
+                    {% if societe.telephone %}
+                    <p><i class="fas fa-phone mr-2"></i>{{ societe.telephone }}</p>
+                    {% endif %}
+                    {% if societe.email %}
+                    <p><i class="fas fa-envelope mr-2"></i>{{ societe.email }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 text-xs text-gray-500">
+                    Créée le {{ societe.created_at.strftime('%d/%m/%Y') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-building text-4xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 mb-4">Aucune société trouvée</p>
+            <a href="{{ url_for('nouvelle_societe') }}" 
+               class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                Ajouter une société
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

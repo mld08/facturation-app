@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-edit mr-2 text-blue-600"></i>Modifier Facture {{ facture.numero_facture }}
+        </h2>
+        <a href="{{ url_for('voir_facture', id=facture.id) }}" 
+           class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>Retour
+        </a>
+    </div>
+
+    <form method="POST" class="space-y-6">
+        <!-- Informations générales -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date de Facture</label>
+                <input type="date" name="date_facture" required
+                       value="{{ facture.date_facture.strftime('%Y-%m-%d') }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Société</label>
+                <select name="societe_id" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Sélectionner une société</option>
+                    {% for societe in societes %}
+                        <option value="{{ societe.id }}" {% if societe.id == facture.societe_id %}selected{% endif %}>
+                            {{ societe.nom }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Lignes de facture existantes -->
+        <div>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Détails de la Facture</h3>
+                <button type="button" onclick="ajouterLigne()" 
+                        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Ajouter une ligne
+                </button>
+            </div>
+
+            <div id="lignes-facture" class="space-y-4">
+                {% for ligne in facture.lignes %}
+                <div class="ligne-facture flex items-center space-x-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                    <div class="flex-1">
+                        <select name="certificat_id[]" required onchange="calculerMontant(this)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Sélectionner un certificat</option>
+                            {% for certificat in certificats %}
+                                <option value="{{ certificat.id }}" data-prix="{{ certificat.prix_unitaire }}"
+                                        {% if certificat.id == ligne.certificat_id %}selected{% endif %}>
+                                    {{ certificat.nom }} ({{ "{:,.2f}".format(certificat.prix_unitaire) }} FCFA)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="w-32">
+                        <input type="number" name="nombre_certificats[]" placeholder="Nombre" required min="1"
+                               value="{{ ligne.nombre_certificats }}" onchange="calculerMontant(this)"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="w-32">
+                        <input type="number" name="poids[]" placeholder="Poids" required min="0.01" step="0.01"
+                               value="{{ ligne.poids }}" onchange="calculerMontant(this)"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="w-32 text-center">
+                        <span class="montant-ligne font-semibold text-gray-700">{{ "{:,.2f}".format(ligne.montant) }} FCFA</span>
+                    </div>
+                    
+                    <button type="button" onclick="supprimerLigne(this)"
+                            class="text-red-600 hover:text-red-800 px-2 py-1">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Template pour nouvelle ligne (caché) -->
+        <div id="ligne-template" class="ligne-facture flex items-center space-x-4 p-4 border border-gray-200 rounded-lg bg-gray-50" style="display: none;">
+            <div class="flex-1">
+                <select name="certificat_id[]" onchange="calculerMontant(this)"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Sélectionner un certificat</option>
+                    {% for certificat in certificats %}
+                        <option value="{{ certificat.id }}" data-prix="{{ certificat.prix_unitaire }}">
+                            {{ certificat.nom }} ({{ "{:,.2f}".format(certificat.prix_unitaire) }} FCFA)
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="w-32">
+                <input type="number" name="nombre_certificats[]" placeholder="Nombre" min="1"
+                       onchange="calculerMontant(this)"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="w-32">
+                <input type="number" name="poids[]" placeholder="Poids" min="0.01" step="0.01"
+                       onchange="calculerMontant(this)"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div class="w-32 text-center">
+                <span class="montant-ligne font-semibold text-gray-700">0.00 FCFA</span>
+            </div>
+            
+            <button type="button" onclick="supprimerLigne(this)"
+                    class="text-red-600 hover:text-red-800 px-2 py-1">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+
+        <!-- Boutons de soumission -->
+        <div class="flex justify-end space-x-4 pt-6 border-t">
+            <a href="{{ url_for('voir_facture', id=facture.id) }}" 
+               class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
+                Annuler
+            </a>
+            <button type="submit" 
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-save mr-2"></i>Modifier la Facture
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-file-invoice mr-2 text-blue-600"></i>Facture {{ facture.numero_facture }}
+        </h2>
+        <div class="flex space-x-3">
+            <a href="{{ url_for('modifier_facture', id=facture.id) }}" 
+               class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-edit mr-2"></i>Modifier
+            </a>
+            <a href="{{ url_for('generer_pdf', id=facture.id) }}" target="_blank"
+               class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                <i class="fas fa-file-pdf mr-2"></i>Générer PDF
+            </a>
+            <a href="{{ url_for('liste_factures') }}" 
+               class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Informations de la facture -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Informations Générales</h3>
+            <div class="space-y-2">
+                <p><span class="font-medium">Numéro:</span> {{ facture.numero_facture }}</p>
+                <p><span class="font-medium">Date:</span> {{ facture.date_facture.strftime('%d/%m/%Y') }}</p>
+                <p><span class="font-medium">Statut:</span> 
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        {{ facture.statut }}
+                    </span>
+                </p>
+                <p><span class="font-medium">Créée le:</span> {{ facture.created_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Société Cliente</h3>
+            <div class="space-y-2">
+                <p class="font-medium text-lg">{{ facture.societe.nom }}</p>
+                {% if facture.societe.adresse %}
+                <p><span class="font-medium">Adresse:</span> {{ facture.societe.adresse }}</p>
+                {% endif %}
+                {% if facture.societe.telephone %}
+                <p><span class="font-medium">Téléphone:</span> {{ facture.societe.telephone }}</p>
+                {% endif %}
+                {% if facture.societe.email %}
+                <p><span class="font-medium">Email:</span> {{ facture.societe.email }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Détails de la facture -->
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Détails de la Facture</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Certificat
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nombre
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Poids
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Prix Unitaire
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Montant
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for ligne in facture.lignes %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {{ ligne.certificat.nom }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ ligne.nombre_certificats }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ ligne.poids }} kg
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ "{:,.2f}".format(ligne.prix_unitaire) }} FCFA
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ "{:,.2f}".format(ligne.montant) }} FCFA
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="bg-gray-50">
+                    <tr>
+                        <td colspan="4" class="px-6 py-3 text-right text-sm font-medium text-gray-900">
+                            Total:
+                        </td>
+                        <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
+                            {{ "{:,.2f}".format(facture.montant_total) }} FCFA
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

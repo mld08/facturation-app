@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-tachometer-alt mr-2 text-blue-600"></i>Tableau de Bord
+        </h2>
+        <a href="{{ url_for('nouvelle_facture') }}" 
+           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>Nouvelle Facture
+        </a>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-file-invoice text-3xl mr-4"></i>
+                <div>
+                    <p class="text-sm opacity-90">Total Factures</p>
+                    <p class="text-2xl font-bold">{{ factures|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-building text-3xl mr-4"></i>
+                <div>
+                    <p class="text-sm opacity-90">Sociétés</p>
+                    <p class="text-2xl font-bold">-</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-certificate text-3xl mr-4"></i>
+                <div>
+                    <p class="text-sm opacity-90">Certificats</p>
+                    <p class="text-2xl font-bold">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dernières factures -->
+    <div>
+        <h3 class="text-xl font-semibold text-gray-800 mb-4">Dernières Factures</h3>
+        
+        {% if factures %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                N° Facture
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Société
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Montant
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for facture in factures %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ facture.numero_facture }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ facture.societe.nom }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ facture.date_facture.strftime('%d/%m/%Y') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ "{:,.2f}".format(facture.montant_total) }} FCFA
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="{{ url_for('voir_facture', id=facture.id) }}" 
+                                   class="text-blue-600 hover:text-blue-900 mr-3">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('modifier_facture', id=facture.id) }}" 
+                                   class="text-green-600 hover:text-green-900 mr-3">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('generer_pdf', id=facture.id) }}" 
+                                   class="text-red-600 hover:text-red-900" target="_blank">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-file-invoice text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">Aucune facture trouvée</p>
+                <a href="{{ url_for('nouvelle_facture') }}" 
+                   class="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    Créer ma première facture
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
