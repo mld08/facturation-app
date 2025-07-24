@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-lg shadow-lg p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">
+            <i class="fas fa-building mr-2 text-blue-600"></i>Liste des certificats
+        </h2>
+        <a href="{{ url_for('nouveau_certificat') }}" 
+           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>Nouveau certificat
+        </a>
+    </div>
+
+    {% if certificats %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for certificat in certificats %}
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                <div class="flex items-start justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Numéro Certificat : {{ certificat.numero_certificat }}</h3>
+                    <div class="flex items-center space-x-2">
+
+                    <a href="{{ url_for('modifier_certificat', id_certificat=certificat.id_certificat) }}"
+                        class="text-green-600 hover:text-green-900" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </a>
+
+                    <form action="{{ url_for('supprimer_certificat', id_certificat=certificat.id_certificat) }}" method="post"
+                        style="display:inline;"
+                        onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette société ?');">
+                        <button type="submit" title="Supprimer" class="btn btn-danger btn-sm"
+                            style="background: none; border: none; color: red;">
+                            <i class="fas fa-trash"></i> 
+                        </button>
+                    </form>
+
+                </div>
+                </div>
+                
+                <div class="space-y-2 text-sm text-gray-600">
+                    {% if certificat.nombre_certificats %}
+                    <p><i class="mr-2">Nombres certificats:</i>{{ certificat.nombre_certificats }}</p>
+                    {% endif %}
+                    {% if certificat.poids_certifie_kg %}
+                    <p><i class="mr-2">Poids:</i>{{ certificat.poids_certifie_kg }} Kg</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 text-xs text-gray-500">
+                    Créée le {{ certificat.date_facture.strftime('%d/%m/%Y') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-building text-4xl text-gray-300 mb-4"></i>
+            <p class="text-gray-500 mb-4">Aucun certificat trouvé</p>
+            <a href="{{ url_for('nouveau_certificat') }}" 
+               class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                Ajouter un certificat
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

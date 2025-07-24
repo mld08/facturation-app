@@ -4,9 +4,9 @@
 <div class="bg-white rounded-lg shadow-lg p-6">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-800">
-            <i class="fas fa-edit mr-2 text-blue-600"></i>Modifier Facture {{ facture.numero_facture }}
+            <i class="fas fa-plus mr-2 text-blue-600"></i>Nouvelle Facture
         </h2>
-        <a href="{{ url_for('voir_facture', id=facture.id) }}" 
+        <a href="{{ url_for('liste_factures') }}" 
            class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
             <i class="fas fa-arrow-left mr-2"></i>Retour
         </a>
@@ -17,7 +17,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Date de Facture</label>
                 <input type="date" name="date_facture" required
-                       value="{{ facture.date_facture.strftime('%Y-%m-%d') }}"
+                       value="{{ datetime.now().strftime('%Y-%m-%d') }}"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
@@ -27,38 +27,35 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Sélectionner une société</option>
                     {% for societe in societes %}
-                        <option value="{{ societe.id }}" {% if societe.id == facture.societe_id %}selected{% endif %}>
-                            {{ societe.nom_societe }}
-                        </option>
+                        <option value="{{ societe.id }}">{{ societe.nom_societe }}</option>
                     {% endfor %}
                 </select>
             </div>
         </div>
 
-        <!-- Détail de la facture (une seule ligne pour correspondre à nouveau.html) -->
+        <!-- Détails de la facture -->
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Détails de la Facture</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Détail de la Facture</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Prix unitaire (FCFA/kg)</label>
                     <input type="text" name="prix_unitaire" id="prix_unitaire" required
-                           value="{{ facture.prix_unitaire }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de certificats</label>
-                    <input type="number" name="nombre_certificats" required min="1"
-                           value="{{ facture.nombre_certificats }}" oninput="calculerMontant()"
+                    <input type="number" name="nombre_certificats" required min="1" value="1"
+                           oninput="calculerMontant()"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Poids (kg)</label>
                     <input type="number" name="poids" required min="0.01" step="0.01"
-                           value="{{ facture.poids }}" oninput="calculerMontant()"
+                           oninput="calculerMontant()"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
@@ -66,27 +63,27 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Entité</label>
                     <select name="entite" required
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="Aéroport" {% if facture.entite == 'Aéroport' %}selected{% endif %}>Aéroport</option>
-                        <option value="DPSP" {% if facture.entite == 'DPSP' %}selected{% endif %}>DPSP</option>
-                    </select>   
+                        <option value="Aéroport">Aéroport</option>
+                        <option value="DPSP">DPSP</option>
+                    </select>
                 </div>
 
                 <div class="col-span-2 text-right pt-4">
                     <p class="text-lg font-semibold text-gray-800">Montant total : 
-                        <span id="montant_total">{{ "{:,.2f}".format(facture.prix_total) }} FCFA</span>
+                        <span id="montant_total">0.00 FCFA</span>
                     </p>
                 </div>
             </div>
         </div>
 
         <div class="flex justify-end space-x-4 pt-6 border-t">
-            <a href="{{ url_for('voir_facture', id=facture.id) }}" 
+            <a href="{{ url_for('liste_factures') }}" 
                class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors">
                 Annuler
             </a>
             <button type="submit" 
                     class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                <i class="fas fa-save mr-2"></i>Modifier la Facture
+                <i class="fas fa-save mr-2"></i>Créer la Facture
             </button>
         </div>
     </form>
@@ -95,7 +92,6 @@
 <!-- JS pour calcul dynamique -->
 <script>
     function mettreAJourPrixUnitaire() {
-        const select = document.getElementById('certificat_id');
         const prix = select.options[select.selectedIndex].dataset.prix || 0;
         document.getElementById('prix_unitaire').value = prix;
         calculerMontant();
@@ -107,8 +103,5 @@
         const montant = prix * poids;
         document.getElementById('montant_total').textContent = montant.toFixed(2) + " FCFA";
     }
-
-    // Mettre à jour le montant initial dès le chargement
-    document.addEventListener('DOMContentLoaded', calculerMontant);
 </script>
 {% endblock %}

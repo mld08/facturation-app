@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Facture {{ facture.numero_facture if facture.numero_facture else '' }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+
+        body {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 14px;
+            color: #000;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.4;
+            background: white;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .header-left {
+            width: 70%;
+            text-align: center;
+        }
+
+        .header-right {
+            width: 30%;
+            text-align: right;
+        }
+
+        .title {
+            font-weight: bold;
+            font-size: 14px;
+            margin: 4px 0;
+        }
+
+        .subtitle {
+            font-style: italic;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .separator {
+            margin: 4px 0;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: auto;
+            display: block;
+            margin: 5px 0;
+        }
+
+        .date {
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .error-text {
+            color: red;
+            font-style: italic;
+        }
+
+        .info-societe {
+            margin: 30px 0;
+            page-break-inside: avoid;
+        }
+
+        .info-societe p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 180px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+
+        th,
+        td {
+            border: 2px solid #000;
+            padding: 12px 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #193cff;
+            font-weight: bold;
+            font-size: 13px;
+            color: white;
+        }
+
+        .first-column {
+            text-align: left;
+            width: 25%;
+        }
+
+        .number-column {
+            width: 18.75%;
+        }
+
+        .right-align {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        tfoot td {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+
+        .signature {
+        margin-top: 80px;
+        text-align: right;
+    }
+
+    .signature-container {
+        display: inline-block;
+        text-align: right;
+    }
+
+    .signature-title {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 40px;
+        text-align: right;
+    }
+
+    .signature-box {
+        width: 250px;
+        height: 100px;
+        
+        margin-left: auto;
+        padding-top: 20px;
+    }
+
+    .signature-text {
+        font-size: 12px;
+    }
+
+    .footer-separator {
+        margin-top: 60px;
+        border: none;
+        border-top: 1px solid #000;
+    }
+
+    .footer {
+        text-align: center;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+
+        /* Formatage des montants */
+        .montant {
+            font-weight: bold;
+        }
+
+        /* Gestion des erreurs d'affichage */
+        .error-text {
+            color: #999;
+            font-style: italic;
+        }
+
+        /* Styles d'impression */
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-left">
+            <p class="title">République du Sénégal</p>
+            <p class="subtitle"><em>Un Peuple – Un But – Une Foi</em></p>
+            <p class="separator">******</p>
+
+            {% if signature_base64 %}
+            <img src="{{ signature_base64 }}" class="logo-img">
+            {% endif %}
+
+            <p class="title">Ministère des Pêches, des Infrastructures Maritimes et Portuaires</p>
+            <p class="separator">******</p>
+
+            {% if logo_base64 %}
+            <img src="{{ logo_base64 }}" class="logo-img">
+            {% endif %}
+
+            <p class="title">Direction de la Protection et de la Surveillance des Pêches</p>
+        </div>
+
+        <div class="header-right">
+            <p class="date">
+                Dakar, le
+                {% if facture.date_facture %}
+                {{ facture.date_facture.strftime('%d %B %Y') }}
+                {% else %}
+                <span class="error-text">[Date non définie]</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+
+    <div class="info-societe">
+        <p>
+            <span class="info-label">Nom de la Société :</span>
+            {% if facture.societe and facture.societe.nom_societe %}
+            {{ facture.societe.nom_societe }}
+            {% else %}
+            <span class="error-text">[Nom de société non défini]</span>
+            {% endif %}
+        </p>
+        <p>
+            <span class="info-label">Adresse :</span>
+            {% if facture.societe and facture.societe.adresse_societe %}
+            {{ facture.societe.adresse_societe }}
+            {% else %}
+            <span class="error-text">[Adresse non définie]</span>
+            {% endif %}
+        </p>
+        <p>
+            <span class="info-label">Numéro de téléphone :</span>
+            {% if facture.societe and facture.societe.telephone_societe %}
+            {{ facture.societe.telephone_societe }}
+            {% else %}
+            <span class="error-text">[Téléphone non défini]</span>
+            {% endif %}
+        </p>
+        <p>
+            <span class="info-label">Email :</span>
+            {% if facture.societe and facture.societe.email_societe %}
+            {{ facture.societe.email_societe }}
+            {% else %}
+            <span class="error-text">[Email non défini]</span>
+            {% endif %}
+        </p>
+        <p>
+            <span class="info-label">Facture Numéro :</span>
+            {% if facture.numero_facture %}
+            {{ facture.numero_facture }}
+            {% else %}
+            <span class="error-text">[Numéro non défini]</span>
+            {% endif %}
+        </p>
+        <p>
+            <span class="info-label">Date Facture :</span>
+            {% if facture.date_facture %}
+            {{ facture.date_facture.strftime('%d %B %Y') }}
+            {% else %}
+            <span class="error-text">[Date non définie]</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <table class="facture-table">
+        <thead>
+            <tr>
+                <th class="first-column">Nom de la Société</th>
+                <th class="number-column">Nombre de certificats</th>
+                <th class="number-column">Quantité (kg)</th>
+                <th class="number-column">Prix unitaire</th>
+                <th class="number-column">Prix total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if facture.items and facture.items|length > 0 %}
+            {% for item in facture.items %}
+            <tr>
+                <td class="first-column">
+                    {% if item.nom_societe %}
+                    {{ item.nom_societe }}
+                    {% elif facture.societe and facture.societe.nom_societe %}
+                    {{ facture.societe.nom_societe }}
+                    {% else %}
+                    <span class="error-text">[Société non définie]</span>
+                    {% endif %}
+                </td>
+                <td>{{ item.nombre_certificats if item.nombre_certificats else '-' }}</td>
+                <td>{{ item.poids if item.poids else item.quantite_kg if item.quantite_kg else '-' }}</td>
+                <td>{{ "{:,.0f}".format(item.prix_unitaire).replace(',', ' ') if item.prix_unitaire else '0' }} FCFA
+                </td>
+                <td class="montant">{{ "{:,.0f}".format(item.prix_total if item.prix_total else (item.prix_unitaire or
+                    0) * (item.poids or item.quantite_kg or item.quantite or 1)).replace(',', ' ') }} FCFA</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <!-- Ligne par défaut si pas d'items -->
+            <tr>
+                <td class="first-column">
+                    {% if facture.societe and facture.societe.nom_societe %}
+                    {{ facture.societe.nom_societe }}
+                    {% else %}
+                    <span class="error-text">[Société non définie]</span>
+                    {% endif %}
+                </td>
+                <td>{{ facture.nombre_certificats if facture.nombre_certificats else '-' }}</td>
+                <td>{{ facture.poids if facture.poids else '-' }}</td>
+                <td>{{ "{:,.0f}".format(facture.prix_unitaire).replace(',', ' ') if facture.prix_unitaire else '0' }}
+                    FCFA</td>
+                <td class="montant">{{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else
+                    '0' }} FCFA</td>
+            </tr>
+            {% endif %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4" class="right-align">Montant Total :</td>
+                <td class="montant">
+                    {% if facture.montant_total %}
+                    {{ "{:,.0f}".format(facture.montant_total).replace(',', ' ') }} FCFA
+                    {% elif facture.prix_total %}
+                    {{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') }} FCFA
+                    {% else %}
+                    0 FCFA
+                    {% endif %}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Signature alignée à droite -->
+    <div class="signature">
+        <div class="signature-container">
+            <p class="signature-title">Bureau certification</p>
+            <div class="signature-box">
+                <span class="signature-text">Signature et cachet</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ligne séparatrice -->
+    <hr class="footer-separator">
+
+    <!-- Pied de page -->
+    <div class="footer">
+        <p>Cité Fenêtres Mermoz - Dakar - Corniche Ouest - Tél. : 860 24 65 - Fax : 860 31 19</p>
+        <p>Email : spdirecteur@dpsp.sn ; surpeche@hotmail.com - BP : 3656</p>
+    </div>
+
+
+</body>
+
+</html>

@@ -29,27 +29,22 @@
             <div class="space-y-2">
                 <p><span class="font-medium">Numéro:</span> {{ facture.numero_facture }}</p>
                 <p><span class="font-medium">Date:</span> {{ facture.date_facture.strftime('%d/%m/%Y') }}</p>
-                <p><span class="font-medium">Statut:</span> 
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        {{ facture.statut }}
-                    </span>
-                </p>
-                <p><span class="font-medium">Créée le:</span> {{ facture.created_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+                <p><span class="font-medium">Créée le:</span> {{ facture.created_at.strftime('%d/%m/%Y') }}</p>
             </div>
         </div>
         
         <div class="bg-gray-50 p-4 rounded-lg">
             <h3 class="text-lg font-semibold text-gray-800 mb-3">Société Cliente</h3>
             <div class="space-y-2">
-                <p class="font-medium text-lg">{{ facture.societe.nom }}</p>
-                {% if facture.societe.adresse %}
-                <p><span class="font-medium">Adresse:</span> {{ facture.societe.adresse }}</p>
+                <p class="font-medium text-lg">{{ facture.societe.nom_societe }}</p>
+                {% if facture.societe.adresse_societe %}
+                <p><span class="font-medium">Adresse:</span> {{ facture.societe.adresse_societe }}</p>
                 {% endif %}
-                {% if facture.societe.telephone %}
-                <p><span class="font-medium">Téléphone:</span> {{ facture.societe.telephone }}</p>
+                {% if facture.societe.telephone_societe %}
+                <p><span class="font-medium">Téléphone:</span> {{ facture.societe.telephone_societe }}</p>
                 {% endif %}
-                {% if facture.societe.email %}
-                <p><span class="font-medium">Email:</span> {{ facture.societe.email }}</p>
+                {% if facture.societe.email_societe %}
+                <p><span class="font-medium">Email:</span> {{ facture.societe.email_societe }}</p>
                 {% endif %}
             </div>
         </div>
@@ -63,10 +58,10 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Certificat
+                            Societe
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Nombre
+                            Nombre certificats
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Poids
@@ -80,25 +75,23 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    {% for ligne in facture.lignes %}
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {{ ligne.certificat.nom }}
+                            {{ facture.societe.nom_societe }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ ligne.nombre_certificats }}
+                            {{ facture.nombre_certificats }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ ligne.poids }} kg
+                            {{ facture.poids }} kg
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ "{:,.2f}".format(ligne.prix_unitaire) }} FCFA
+                            {{ "{:,.2f}".format(facture.prix_unitaire) }} FCFA
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ "{:,.2f}".format(ligne.montant) }} FCFA
+                            {{ "{:,.2f}".format(facture.prix_total) }} FCFA
                         </td>
                     </tr>
-                    {% endfor %}
                 </tbody>
                 <tfoot class="bg-gray-50">
                     <tr>
@@ -106,7 +99,7 @@
                             Total:
                         </td>
                         <td class="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
-                            {{ "{:,.2f}".format(facture.montant_total) }} FCFA
+                            {{ "{:,.2f}".format(facture.prix_total) }} FCFA
                         </td>
                     </tr>
                 </tfoot>
