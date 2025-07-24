@@ -25,6 +25,7 @@
                         <i class="fas fa-edit"></i>
                     </a>
 
+                    {% if current_user and current_user.role == 'admin' %}
                     <form action="{{ url_for('supprimer_certificat', id_certificat=certificat.id_certificat) }}" method="post"
                         style="display:inline;"
                         onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette société ?');">
@@ -33,7 +34,7 @@
                             <i class="fas fa-trash"></i> 
                         </button>
                     </form>
-
+                    {% endif %}
                 </div>
                 </div>
                 
