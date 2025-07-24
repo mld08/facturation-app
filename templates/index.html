@@ -128,6 +128,16 @@
                                 class="text-red-600 hover:text-red-900" target="_blank">
                                 <i class="fas fa-file-pdf"></i>
                             </a>
+                            {% if current_user and current_user.role == 'admin' %}
+                            <form action="{{ url_for('supprimer_facture', id=facture.id) }}" method="POST"
+                                style="display:inline;"
+                                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette facture ?');"
+                                class="inline-block ml-3">
+                                <button type="submit" title="Supprimer" class="text-red-700 hover:text-red-900">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

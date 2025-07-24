@@ -1,7 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone
-import pdfkit
 from decimal import Decimal
 from dotenv import load_dotenv
 import os
@@ -11,16 +10,34 @@ from xhtml2pdf import pisa
 from io import BytesIO
 import mimetypes
 import base64
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 
 load_dotenv()
 app = Flask(__name__)
+application=app
 app.config['SECRET_KEY'] = 'votre-cle-secrete-ici'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# Modèle pour les utilisateurs
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # 'admin' ou 'agent'
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
 
 # Modèles de base de données
 class Societe(db.Model):
@@ -58,6 +75,41 @@ class Certificat(db.Model):
     date_facture = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).date())
 
 
+# Décorateurs pour l'authentification
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Veuillez vous connecter pour accéder à cette page.', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Veuillez vous connecter pour accéder à cette page.', 'error')
+            return redirect(url_for('login'))
+        
+        user = User.query.get(session['user_id'])
+        if not user or user.role != 'admin':
+            flash('Accès refusé. Droits administrateur requis.', 'error')
+            return redirect(url_for('liste_factures'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def get_current_user():
+    if 'user_id' in session:
+        return User.query.get(session['user_id'])
+    return None
+
+# Fonction pour ajouter le contexte utilisateur dans tous les templates
+@app.context_processor
+def inject_user():
+    return dict(current_user=get_current_user())
+
+
 def image_to_base64(image_path):
     """Convertit une image en base64"""
     try:
@@ -74,9 +126,41 @@ def image_to_base64(image_path):
         print(f"Erreur conversion image: {e}")
         return None
 
+# Routes d'authentification
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        user = User.query.filter_by(username=username, is_active=True).first()
+        
+        if user and user.check_password(password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['role'] = user.role
+            
+            flash(f'Connexion réussie! Bienvenue {user.username}', 'success')
+            
+            # Rediriger selon le rôle
+            if user.role == 'admin':
+                return redirect(url_for('index'))
+            else:
+                return redirect(url_for('liste_factures'))
+        else:
+            flash('Nom d\'utilisateur ou mot de passe incorrect.', 'error')
+    
+    return render_template('auth/login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Vous avez été déconnecté avec succès.', 'success')
+    return redirect(url_for('login'))
 
 # Routes principales
 @app.route('/')
+@admin_required
 def index():
     factures = Facture.query.order_by(Facture.created_at.desc()).limit(10).all()
     societes = Societe.query.all()
@@ -101,11 +185,13 @@ def index():
     return render_template('index.html', factures=factures, societes=societes, certificats=certificats, repartition_entites=repartition_entites, mois_tries=mois_tries, montants_tries=montants_tries)
 
 @app.route('/factures')
+@login_required
 def liste_factures():
     factures = Facture.query.order_by(Facture.created_at.desc()).all()
     return render_template('factures/liste.html', factures=factures)
 
 @app.route('/factures/nouvelle', methods=['GET', 'POST'])
+@login_required
 def nouvelle_facture():
     if request.method == 'POST':
         # Générer un numéro de facture unique
@@ -154,11 +240,13 @@ def nouvelle_facture():
     return render_template('factures/nouveau.html', societes=societes, datetime=datetime)
 
 @app.route('/factures/<int:id>')
+@login_required
 def voir_facture(id):
     facture = Facture.query.get_or_404(id)
     return render_template('factures/voir.html', facture=facture)
 
 @app.route('/factures/<int:id>/modifier', methods=['GET', 'POST'])
+@login_required
 def modifier_facture(id):
     facture = Facture.query.get_or_404(id)
 
@@ -193,34 +281,18 @@ def modifier_facture(id):
     societes = Societe.query.all()
     return render_template('factures/modifier.html', facture=facture, societes=societes, datetime=datetime)
 
-@app.route('/pdf')
-def voir_pdf():
-    return render_template('factures/pdf.html')
+@app.route('/factures/<int:id>/supprimer', methods=['POST'])
+@admin_required 
+def supprimer_facture(id):
+    facture = Facture.query.get_or_404(id)
+    db.session.delete(facture)
+    db.session.commit()
+    flash('Facture supprimée avec succès!', 'success')
+    return redirect(url_for('liste_factures'))
 
-# @app.route('/factures/<int:id>/pdf')
-# def generer_pdf(id):
-#     facture = Facture.query.get_or_404(id)
-#     html = render_template('factures/pdf.html', facture=facture)
-    
-#     options = {
-#         'page-size': 'A4',
-#         'margin-top': '0.75in',
-#         'margin-right': '0.75in',
-#         'margin-bottom': '0.75in',
-#         'margin-left': '0.75in',
-#         'encoding': "UTF-8",
-#         'no-outline': None
-#     }
-    
-#     pdf = pdfkit.from_string(html, False, options=options)
-    
-#     response = make_response(pdf)
-#     response.headers['Content-Type'] = 'application/pdf'
-#     response.headers['Content-Disposition'] = f'inline; filename=facture_{facture.numero_facture}.pdf'
-    
-#     return response
 
 @app.route('/factures/<int:id>/pdf')
+@login_required
 def generer_pdf(id):
     facture = Facture.query.get_or_404(id)
 
@@ -258,11 +330,13 @@ def generer_pdf(id):
 
 # Routes pour la gestion des sociétés
 @app.route('/societes')
+@login_required
 def liste_societes():
     societes = Societe.query.all()
     return render_template('societes/liste.html', societes=societes)
 
 @app.route('/societes/nouvelle', methods=['GET', 'POST'])
+@login_required
 def nouvelle_societe():
     if request.method == 'POST':
         societe = Societe(
@@ -279,6 +353,7 @@ def nouvelle_societe():
     return render_template('societes/nouvelle.html')
 
 @app.route('/societes/<int:id>/modifier', methods=['GET', 'POST'])
+@login_required
 def modifier_societe(id):
     societe = Societe.query.get_or_404(id)
 
@@ -294,6 +369,7 @@ def modifier_societe(id):
     return render_template('societes/modifier.html', societe=societe)
 
 @app.route('/societes/<int:id>/supprimer', methods=['POST'])
+@admin_required
 def supprimer_societe(id):
     societe = Societe.query.get_or_404(id)
     db.session.delete(societe)
@@ -304,11 +380,13 @@ def supprimer_societe(id):
 
 # Routes pour la gestion des certificats
 @app.route('/certificats')
+@login_required
 def liste_certificats():
     certificats = Certificat.query.all()
     return render_template('certificats/liste.html', certificats=certificats)
 
 @app.route('/certificats/nouveau', methods=['GET', 'POST'])
+@login_required
 def nouveau_certificat():
     if request.method == 'POST':
         certificat = Certificat(
@@ -325,6 +403,7 @@ def nouveau_certificat():
     return render_template('certificats/nouveau.html')
 
 @app.route('/certificats/<int:id_certificat>/modifier', methods=['GET', 'POST'])
+@login_required
 def modifier_certificat(id_certificat):
     certificat = Certificat.query.get_or_404(id_certificat)
 
@@ -340,6 +419,7 @@ def modifier_certificat(id_certificat):
     return render_template('certificats/modifier.html', certificat=certificat)
 
 @app.route('/certificats/<int:id_certificat>/supprimer', methods=['POST'])
+@admin_required
 def supprimer_certificat(id_certificat):
     certificat = Certificat.query.get_or_404(id_certificat)
     db.session.delete(certificat)
@@ -351,6 +431,33 @@ def supprimer_certificat(id_certificat):
 def init_db():
     with app.app_context():
         db.create_all()
+
+        # Créer les utilisateurs par défaut s'ils n'existent pas
+        if not User.query.first():
+            # 4 comptes admin
+            admin1 = User(username='admin', role='admin')
+            admin1.set_password('Adp1fidx$')
+            
+            admin2 = User(username='directeur', role='admin')
+            admin2.set_password('dir@25')
+            
+            admin3 = User(username='bureaucertification', role='admin')
+            admin3.set_password('bcertif@25')
+
+            admin4 = User(username='sis', role='admin')
+            admin4.set_password('sis@25')
+            
+            # 2 comptes agent
+            agent1 = User(username='agentdpsp', role='agent')
+            agent1.set_password('agentdpsp@25')
+            
+            agent2 = User(username='agentaeroport', role='agent')
+            agent2.set_password('agentaeroport@25')
+            
+            db.session.add_all([admin1, admin2, admin3, admin4, agent1, agent2])
+            db.session.commit()
+            
+            print("Utilisateurs créés avec succés!")
         
         # Ajouter quelques données de test si aucune donnée n'existe
         # if not Societe.query.first():
