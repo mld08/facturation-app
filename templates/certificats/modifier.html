@@ -13,26 +13,26 @@
 
     <form method="POST" class="space-y-6 max-w-2xl">
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Numéro du certificat *</label>
+            <label for="numero_certificat" class="block text-sm font-medium text-gray-700 mb-2">Numéro du certificat *</label>
             <input type="number" name="numero_certificat" required value="{{ certificat.numero_certificat }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                    placeholder="Numéro du certificat">
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de certificats *</label>
+            <label for="nombre_certificats" class="block text-sm font-medium text-gray-700 mb-2">Nombre de certificats *</label>
             <input type="number" name="nombre_certificats" required value="{{ certificat.nombre_certificats }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                    placeholder="Nombre de certificats">
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Poids certifié (en Kg)</label>
-            <input type="number" name="poids_certifie_kg" value="{{ certificat.poids_certifie_kg }}"
+            <label for="poids_certifie_kg" class="block text-sm font-medium text-gray-700 mb-2">Poids certifié (en Kg)</label>
+            <input type="number" name="poids_certifie_kg" id="poids_certifie_kg" value="{{ certificat.poids_certifie_kg }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                    placeholder="Poids certifié en Kg">
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Date de la facture *</label>
+            <label for="date_facture" class="block text-sm font-medium text-gray-700 mb-2">Date de la facture *</label>
             <input type="date" name="date_facture" required value="{{ certificat.date_facture.strftime('%Y-%m-%d') }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
