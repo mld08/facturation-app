@@ -129,45 +129,44 @@
         }
 
         .signature {
-        margin-top: 80px;
-        text-align: right;
-    }
+            margin-top: 80px;
+            text-align: right;
+        }
 
-    .signature-container {
-        display: inline-block;
-        text-align: right;
-    }
+        .signature-container {
+            display: inline-block;
+            text-align: right;
+        }
 
-    .signature-title {
-        font-size: 16px;
-        font-weight: bold;
-        margin-bottom: 40px;
-        text-align: right;
-    }
+        .signature-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            text-align: right;
+        }
 
-    .signature-box {
-        width: 250px;
-        height: 100px;
-        
-        margin-left: auto;
-        padding-top: 20px;
-    }
+        .signature-box {
+            width: 250px;
+            height: 100px;
+            margin-left: auto;
+            padding-top: 20px;
+        }
 
-    .signature-text {
-        font-size: 12px;
-    }
+        .signature-text {
+            font-size: 12px;
+        }
 
-    .footer-separator {
-        margin-top: 60px;
-        border: none;
-        border-top: 1px solid #000;
-    }
+        .footer-separator {
+            margin-top: 60px;
+            border: none;
+            border-top: 1px solid #000;
+        }
 
-    .footer {
-        text-align: center;
-        font-size: 12px;
-        margin-top: 10px;
-    }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 10px;
+        }
 
         /* Formatage des montants */
         .montant {
@@ -228,12 +227,13 @@
         </div>
     </div>
 
-
     <div class="info-societe">
         <p>
             <span class="info-label">Nom de la Société :</span>
             {% if facture.societe and facture.societe.nom_societe %}
             {{ facture.societe.nom_societe }}
+            {% elif facture.nom_societe %}
+            {{ facture.nom_societe }}
             {% else %}
             <span class="error-text">[Nom de société non défini]</span>
             {% endif %}
@@ -285,62 +285,41 @@
             <tr>
                 <th class="first-column">Nom de la Société</th>
                 <th class="number-column">Nombre de certificats</th>
-                <th class="number-column">Quantité (kg)</th>
+                {% if facture.mode_calcul == 'certificat' %}
+                <th class="number-column">Quantité par certificat</th>
+                {% else %}
+                <th class="number-column">Poids (kg)</th>
+                {% endif %}
                 <th class="number-column">Prix unitaire</th>
                 <th class="number-column">Prix total</th>
             </tr>
         </thead>
         <tbody>
-            {% if facture.items and facture.items|length > 0 %}
-            {% for item in facture.items %}
-            <tr>
-                <td class="first-column">
-                    {% if item.nom_societe %}
-                    {{ item.nom_societe }}
-                    {% elif facture.societe and facture.societe.nom_societe %}
-                    {{ facture.societe.nom_societe }}
-                    {% else %}
-                    <span class="error-text">[Société non définie]</span>
-                    {% endif %}
-                </td>
-                <td>{{ item.nombre_certificats if item.nombre_certificats else '-' }}</td>
-                <td>{{ item.poids if item.poids else item.quantite_kg if item.quantite_kg else '-' }}</td>
-                <td>{{ "{:,.0f}".format(item.prix_unitaire).replace(',', ' ') if item.prix_unitaire else '0' }} FCFA
-                </td>
-                <td class="montant">{{ "{:,.0f}".format(item.prix_total if item.prix_total else (item.prix_unitaire or
-                    0) * (item.poids or item.quantite_kg or item.quantite or 1)).replace(',', ' ') }} FCFA</td>
-            </tr>
-            {% endfor %}
-            {% else %}
-            <!-- Ligne par défaut si pas d'items -->
             <tr>
                 <td class="first-column">
                     {% if facture.societe and facture.societe.nom_societe %}
                     {{ facture.societe.nom_societe }}
+                    {% elif facture.nom_societe %}
+                    {{ facture.nom_societe }}
                     {% else %}
                     <span class="error-text">[Société non définie]</span>
                     {% endif %}
                 </td>
                 <td>{{ facture.nombre_certificats if facture.nombre_certificats else '-' }}</td>
+                {% if facture.mode_calcul == 'certificat' %}
+                <td>{{ facture.prix_par_certificat if facture.prix_par_certificat else '-' }}</td>
+                {% else %}
                 <td>{{ facture.poids if facture.poids else '-' }}</td>
-                <td>{{ "{:,.0f}".format(facture.prix_unitaire).replace(',', ' ') if facture.prix_unitaire else '0' }}
-                    FCFA</td>
-                <td class="montant">{{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else
-                    '0' }} FCFA</td>
+                {% endif %}
+                <td>{{ "{:,.0f}".format(facture.prix_unitaire).replace(',', ' ') if facture.prix_unitaire else '0' }} FCFA</td>
+                <td class="montant">{{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else '0' }} FCFA</td>
             </tr>
-            {% endif %}
         </tbody>
         <tfoot>
             <tr>
                 <td colspan="4" class="right-align">Montant Total :</td>
                 <td class="montant">
-                    {% if facture.montant_total %}
-                    {{ "{:,.0f}".format(facture.montant_total).replace(',', ' ') }} FCFA
-                    {% elif facture.prix_total %}
-                    {{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') }} FCFA
-                    {% else %}
-                    0 FCFA
-                    {% endif %}
+                    {{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else '0' }} FCFA
                 </td>
             </tr>
         </tfoot>
@@ -364,7 +343,6 @@
         <p>Cité Fenêtres Mermoz - Dakar - Corniche Ouest - Tél. : 860 24 65 - Fax : 860 31 19</p>
         <p>Email : spdirecteur@dpsp.sn ; surpeche@hotmail.com - BP : 3656</p>
     </div>
-
 
 </body>
 

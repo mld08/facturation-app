@@ -31,6 +31,12 @@
             text-align: center;
             margin-bottom: 2rem;
         }
+
+        .login-header img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 1rem;
+        }
         
         .login-header h2 {
             color: #333;
@@ -135,27 +141,12 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <i class="fas fa-file-invoice-dollar fa-3x text-primary mb-3"></i>
+            <img src="{{url_for('static', filename='img/dpsp.png')}}" alt="" class="w-8 h-8 mb-2 mx-auto">
             <h2>Connexion</h2>
             <p>Système de Facturation</p>
         </div>
         
         <!-- Informations de test -->
-        <!-- <div class="user-info">
-            <h6><i class="fas fa-info-circle"></i> Comptes de test :</h6>
-            <div class="row">
-                <div class="col-6">
-                    <strong>Admins :</strong><br>
-                    admin1, admin2, admin3<br>
-                    <small>Mot de passe: admin123</small>
-                </div>
-                <div class="col-6">
-                    <strong>Agents :</strong><br>
-                    agent1, agent2<br>
-                    <small>Mot de passe: agent123</small>
-                </div>
-            </div>
-        </div> -->
         
         <!-- Messages flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}

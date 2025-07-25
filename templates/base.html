@@ -18,17 +18,18 @@
                 <div class="flex items-center space-x-4">
                     <h1 class="text-lg sm:text-xl font-bold">
                         {% if current_user and current_user.role == 'admin' %}
-                            <a href="{{ url_for('index') }}" class="hover:text-blue-200">
-                                <i class="fas fa-file-invoice-dollar mr-2"></i>
-                                <span class="hidden sm:inline">Facturation DPSP / Aéroport</span>
-                                <span class="sm:hidden">DPSP</span>
-                            </a>
+                        <a href="{{ url_for('index') }}" class="hover:text-blue-200">
+                            <img src="{{ url_for('static', filename='img/dpsp.png') }}" alt=""
+                                class="w-10 h-10 inline-block mr-2">
+                            <span class="hidden sm:inline">Facturation DPSP / AEROPORT</span>
+                            <span class="sm:hidden">DPSP</span>
+                        </a>
                         {% else %}
-                            <a href="{{ url_for('liste_factures') }}" class="hover:text-blue-200">
-                                <i class="fas fa-file-invoice-dollar mr-2"></i>
-                                <span class="hidden sm:inline">Facturation DPSP / Aéroport</span>
-                                <span class="sm:hidden">DPSP</span>
-                            </a>
+                        <a href="{{ url_for('liste_factures') }}" class="hover:text-blue-200">
+                            <i class="fas fa-file-invoice-dollar mr-2"></i>
+                            <span class="hidden sm:inline">Facturation DPSP / AEROPORT</span>
+                            <span class="sm:hidden">DPSP</span>
+                        </a>
                         {% endif %}
                     </h1>
                 </div>
@@ -38,9 +39,9 @@
                     <!-- Navigation principale -->
                     <div class="flex space-x-6">
                         {% if current_user and current_user.role == 'admin' %}
-                            <a href="{{ url_for('index') }}" class="hover:text-blue-200 transition-colors">
-                                <i class="fas fa-home mr-1"></i>Accueil
-                            </a>
+                        <a href="{{ url_for('index') }}" class="hover:text-blue-200 transition-colors">
+                            <i class="fas fa-home mr-1"></i>Accueil
+                        </a>
                         {% endif %}
                         <a href="{{ url_for('liste_factures') }}" class="hover:text-blue-200 transition-colors">
                             <i class="fas fa-file-invoice mr-1"></i>Factures
@@ -52,31 +53,31 @@
                             <i class="fas fa-certificate mr-1"></i>Certificats
                         </a>
                     </div>
-                    
+
                     <!-- Informations utilisateur et déconnexion -->
                     {% if current_user %}
-                        <div class="flex items-center space-x-4 border-l border-blue-500 pl-6">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-white text-sm"></i>
-                                </div>
-                                <div class="text-sm">
-                                    <div class="font-medium">{{ current_user.username }}</div>
-                                    <div class="text-blue-200 text-xs">
-                                        {% if current_user.role == 'admin' %}
-                                            <i class="fas fa-crown mr-1"></i>Administrateur
-                                        {% else %}
-                                            <i class="fas fa-user mr-1"></i>Agent
-                                        {% endif %}
-                                    </div>
+                    <div class="flex items-center space-x-4 border-l border-blue-500 pl-6">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white text-sm"></i>
+                            </div>
+                            <div class="text-sm">
+                                <div class="font-medium">{{ current_user.username }}</div>
+                                <div class="text-blue-200 text-xs">
+                                    {% if current_user.role == 'admin' %}
+                                    <i class="fas fa-crown mr-1"></i>Administrateur
+                                    {% else %}
+                                    <i class="fas fa-user mr-1"></i>Agent
+                                    {% endif %}
                                 </div>
                             </div>
-                            <a href="{{ url_for('logout') }}" 
-                               class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg transition-colors text-sm"
-                               onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">
-                                <i class="fas fa-sign-out-alt mr-1"></i>Déconnexion
-                            </a>
                         </div>
+                        <a href="{{ url_for('logout') }}"
+                            class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg transition-colors text-sm"
+                            onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Déconnexion
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
 
@@ -84,18 +85,19 @@
                 <div class="lg:hidden flex items-center space-x-2">
                     <!-- Info utilisateur mobile -->
                     {% if current_user %}
-                        <div class="flex items-center space-x-2 mr-2">
-                            <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                <i class="fas fa-user text-white text-xs"></i>
-                            </div>
-                            <span class="text-sm font-medium">{{ current_user.username }}</span>
+                    <div class="flex items-center space-x-2 mr-2">
+                        <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white text-xs"></i>
                         </div>
+                        <span class="text-sm font-medium">{{ current_user.username }}</span>
+                    </div>
                     {% endif %}
-                    
+
                     <!-- Bouton hamburger -->
                     <button id="mobile-menu-button" class="p-2 rounded-lg hover:bg-blue-500 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
                 </div>
@@ -105,38 +107,42 @@
             <div id="mobile-menu" class="lg:hidden hidden border-t border-blue-500 pt-4 pb-2">
                 <div class="space-y-2">
                     {% if current_user and current_user.role == 'admin' %}
-                        <a href="{{ url_for('index') }}" class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
-                            <i class="fas fa-home mr-2"></i>Accueil
-                        </a>
+                    <a href="{{ url_for('index') }}"
+                        class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
+                        <i class="fas fa-home mr-2"></i>Accueil
+                    </a>
                     {% endif %}
-                    <a href="{{ url_for('liste_factures') }}" class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
+                    <a href="{{ url_for('liste_factures') }}"
+                        class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
                         <i class="fas fa-file-invoice mr-2"></i>Factures
                     </a>
-                    <a href="{{ url_for('liste_societes') }}" class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
+                    <a href="{{ url_for('liste_societes') }}"
+                        class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
                         <i class="fas fa-building mr-2"></i>Sociétés
                     </a>
-                    <a href="{{ url_for('liste_certificats') }}" class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
+                    <a href="{{ url_for('liste_certificats') }}"
+                        class="block px-4 py-2 hover:bg-blue-500 rounded-lg transition-colors">
                         <i class="fas fa-certificate mr-2"></i>Certificats
                     </a>
-                    
+
                     {% if current_user %}
-                        <div class="border-t border-blue-500 pt-2 mt-2">
-                            <div class="px-4 py-2 text-sm">
-                                <div class="font-medium">{{ current_user.username }}</div>
-                                <div class="text-blue-200 text-xs">
-                                    {% if current_user.role == 'admin' %}
-                                        <i class="fas fa-crown mr-1"></i>Administrateur
-                                    {% else %}
-                                        <i class="fas fa-user mr-1"></i>Agent
-                                    {% endif %}
-                                </div>
+                    <div class="border-t border-blue-500 pt-2 mt-2">
+                        <div class="px-4 py-2 text-sm">
+                            <div class="font-medium">{{ current_user.username }}</div>
+                            <div class="text-blue-200 text-xs">
+                                {% if current_user.role == 'admin' %}
+                                <i class="fas fa-crown mr-1"></i>Administrateur
+                                {% else %}
+                                <i class="fas fa-user mr-1"></i>Agent
+                                {% endif %}
                             </div>
-                            <a href="{{ url_for('logout') }}" 
-                               class="block mx-4 mt-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-colors text-sm text-center"
-                               onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">
-                                <i class="fas fa-sign-out-alt mr-1"></i>Déconnexion
-                            </a>
                         </div>
+                        <a href="{{ url_for('logout') }}"
+                            class="block mx-4 mt-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-colors text-sm text-center"
+                            onclick="return confirm('Êtes-vous sûr de vouloir vous déconnecter ?')">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Déconnexion
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -164,14 +170,14 @@
     <!-- Scripts -->
     <script>
         // Toggle menu mobile
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');
-            
+
             if (mobileMenuButton && mobileMenu) {
-                mobileMenuButton.addEventListener('click', function() {
+                mobileMenuButton.addEventListener('click', function () {
                     mobileMenu.classList.toggle('hidden');
-                    
+
                     // Animation du bouton hamburger
                     const svg = mobileMenuButton.querySelector('svg');
                     if (mobileMenu.classList.contains('hidden')) {
@@ -182,19 +188,19 @@
                         svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
                     }
                 });
-                
+
                 // Fermer le menu quand on clique sur un lien
                 const mobileMenuLinks = mobileMenu.querySelectorAll('a');
                 mobileMenuLinks.forEach(link => {
-                    link.addEventListener('click', function() {
+                    link.addEventListener('click', function () {
                         mobileMenu.classList.add('hidden');
                         const svg = mobileMenuButton.querySelector('svg');
                         svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>';
                     });
                 });
-                
+
                 // Fermer le menu si on clique en dehors
-                document.addEventListener('click', function(event) {
+                document.addEventListener('click', function (event) {
                     if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
                         mobileMenu.classList.add('hidden');
                         const svg = mobileMenuButton.querySelector('svg');
@@ -204,42 +210,29 @@
             }
         });
     </script>
-    
-    <!-- <script>
-        // Fonction pour ajouter une ligne de facture
-        function ajouterLigne() {
-            const container = document.getElementById('lignes-facture');
-            const ligneTemplate = document.getElementById('ligne-template');
-            const nouvelleLigne = ligneTemplate.cloneNode(true);
-            nouvelleLigne.id = '';
-            nouvelleLigne.style.display = 'flex';
-            container.appendChild(nouvelleLigne);
+
+    <script>
+        let timeout;
+
+        // Durée d'inactivité avant déconnexion (en millisecondes)
+        const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
+
+        function resetTimer() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                window.location.href = "{{ url_for('logout') }}";
+            }, INACTIVITY_LIMIT);
         }
 
-        // Fonction pour supprimer une ligne
-        function supprimerLigne(button) {
-            button.closest('.ligne-facture').remove();
-        }
+        // Réinitialiser le timer à chaque action de l'utilisateur
+        ['mousemove', 'keydown', 'scroll', 'click'].forEach(evt =>
+            document.addEventListener(evt, resetTimer)
+        );
 
-        // Calculer le montant d'une ligne
-        function calculerMontant(element) {
-            const ligne = element.closest('.ligne-facture');
-            const certificatSelect = ligne.querySelector('select[name="certificat_id[]"]');
-            const nombreInput = ligne.querySelector('input[name="nombre_certificats[]"]');
-            const poidsInput = ligne.querySelector('input[name="poids[]"]');
-            const montantSpan = ligne.querySelector('.montant-ligne');
+        resetTimer(); // Initialiser le timer au chargement
+    </script>
 
-            if (certificatSelect.value && nombreInput.value && poidsInput.value) {
-                const prixUnitaire = parseFloat(certificatSelect.options[certificatSelect.selectedIndex].dataset.prix);
-                const nombre = parseInt(nombreInput.value);
-                const poids = parseFloat(poidsInput.value);
-                const montant = prixUnitaire * nombre * poids;
-                
-                montantSpan.textContent = montant.toFixed(2) + ' FCFA';
-            }
-        }
-    </script> -->
-    
+
 </body>
 
 </html>

@@ -35,30 +35,63 @@
             </div>
         </div>
 
-        <!-- Détail de la facture (une seule ligne pour correspondre à nouveau.html) -->
+        <!-- Mode de calcul -->
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Mode de Calcul</h3>
+            <div class="flex space-x-6">
+                <label class="flex items-center">
+                    <input type="radio" name="mode_calcul" value="poids" 
+                           {% if not facture.mode_calcul or facture.mode_calcul == 'poids' %}checked{% endif %}
+                           onchange="toggleModeCalcul()"
+                           class="mr-2 text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm font-medium text-gray-700">Calcul par poids (Prix unitaire × Poids)</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="mode_calcul" value="certificat"
+                           {% if facture.mode_calcul == 'certificat' %}checked{% endif %}
+                           onchange="toggleModeCalcul()"
+                           class="mr-2 text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm font-medium text-gray-700">Calcul par certificat (Prix unitaire × Prix par certificat)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Détails de la facture -->
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Détails de la Facture</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Détail de la Facture</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Prix unitaire (FCFA/kg)</label>
-                    <input type="text" name="prix_unitaire" id="prix_unitaire" required
-                           value="{{ facture.prix_unitaire }}"
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Prix unitaire (FCFA)</label>
+                    <input type="number" name="prix_unitaire" id="prix_unitaire" required step="0.01" min="0"
+                           value="{{ facture.prix_unitaire }}" oninput="calculerMontant()"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de certificats</label>
-                    <input type="number" name="nombre_certificats" required min="1"
-                           value="{{ facture.nombre_certificats }}" oninput="calculerMontant()"
+                    <input type="number" name="nombre_certificats" required min="1" 
+                           value="{{ facture.nombre_certificats }}"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Poids (kg)</label>
-                    <input type="number" name="poids" required min="0.01" step="0.01"
-                           value="{{ facture.poids }}" oninput="calculerMontant()"
+                <!-- Champ Poids -->
+                <div id="champ_poids">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Poids (kg) <span class="text-red-500" id="poids_required">*</span>
+                    </label>
+                    <input type="number" name="poids" id="poids" step="0.01" min="0.01"
+                           value="{{ facture.poids if facture.poids }}" oninput="calculerMontant()"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <!-- Champ Prix par certificat -->
+                <div id="champ_prix_certificat" style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Prix par certificat (FCFA) <span class="text-red-500" id="prix_cert_required">*</span>
+                    </label>
+                    <input type="number" name="prix_par_certificat" id="prix_par_certificat" step="0.01" min="0"
+                           value="{{ facture.prix_par_certificat if facture.prix_par_certificat }}" oninput="calculerMontant()"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
@@ -68,13 +101,19 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="Aéroport" {% if facture.entite == 'Aéroport' %}selected{% endif %}>Aéroport</option>
                         <option value="DPSP" {% if facture.entite == 'DPSP' %}selected{% endif %}>DPSP</option>
-                    </select>   
+                    </select>
                 </div>
 
                 <div class="col-span-2 text-right pt-4">
-                    <p class="text-lg font-semibold text-gray-800">Montant total : 
-                        <span id="montant_total">{{ "{:,.2f}".format(facture.prix_total) }} FCFA</span>
-                    </p>
+                    <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <p class="text-lg font-semibold text-gray-800">
+                            Mode de calcul : <span id="mode_affiche" class="text-blue-600">Par poids</span>
+                        </p>
+                        <p class="text-xl font-bold text-green-600">
+                            Montant total : <span id="montant_total">{{ facture.prix_total }} FCFA</span>
+                        </p>
+                        <p id="calcul_detail" class="text-sm text-gray-600 mt-2"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -86,7 +125,7 @@
             </a>
             <button type="submit" 
                     class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                <i class="fas fa-save mr-2"></i>Modifier la Facture
+                <i class="fas fa-save mr-2"></i>Enregistrer les modifications
             </button>
         </div>
     </form>
@@ -94,21 +133,75 @@
 
 <!-- JS pour calcul dynamique -->
 <script>
-    function mettreAJourPrixUnitaire() {
-        const select = document.getElementById('certificat_id');
-        const prix = select.options[select.selectedIndex].dataset.prix || 0;
-        document.getElementById('prix_unitaire').value = prix;
+    function toggleModeCalcul() {
+        const modeRadios = document.querySelectorAll('input[name="mode_calcul"]');
+        const modePoids = document.getElementById('champ_poids');
+        const modeCertificat = document.getElementById('champ_prix_certificat');
+        const modeAffiche = document.getElementById('mode_affiche');
+        const poidsInput = document.getElementById('poids');
+        const prixCertificatInput = document.getElementById('prix_par_certificat');
+        
+        let modeSelectionne = '';
+        modeRadios.forEach(radio => {
+            if (radio.checked) {
+                modeSelectionne = radio.value;
+            }
+        });
+
+        if (modeSelectionne === 'poids') {
+            modePoids.style.display = 'block';
+            modeCertificat.style.display = 'none';
+            modeAffiche.textContent = 'Par poids';
+            
+            // Rendre le poids obligatoire et le prix par certificat optionnel
+            poidsInput.required = true;
+            prixCertificatInput.required = false;
+            document.getElementById('poids_required').style.display = 'inline';
+        } else {
+            modePoids.style.display = 'none';
+            modeCertificat.style.display = 'block';
+            modeAffiche.textContent = 'Par certificat';
+            
+            // Rendre le prix par certificat obligatoire et le poids optionnel
+            poidsInput.required = false;
+            prixCertificatInput.required = true;
+            document.getElementById('prix_cert_required').style.display = 'inline';
+        }
+        
         calculerMontant();
     }
 
     function calculerMontant() {
-        const prix = parseFloat(document.getElementById('prix_unitaire').value) || 0;
-        const poids = parseFloat(document.querySelector('input[name="poids"]').value) || 0;
-        const montant = prix * poids;
+        const modeRadios = document.querySelectorAll('input[name="mode_calcul"]');
+        const prixUnitaire = parseFloat(document.getElementById('prix_unitaire').value) || 0;
+        const poids = parseFloat(document.getElementById('poids').value) || 0;
+        const prixParCertificat = parseFloat(document.getElementById('prix_par_certificat').value) || 0;
+        
+        let modeSelectionne = '';
+        modeRadios.forEach(radio => {
+            if (radio.checked) {
+                modeSelectionne = radio.value;
+            }
+        });
+
+        let montant = 0;
+        let detail = '';
+
+        if (modeSelectionne === 'poids') {
+            montant = prixUnitaire * poids;
+            detail = `${prixUnitaire.toFixed(2)} FCFA × ${poids.toFixed(2)} kg = ${montant.toFixed(2)} FCFA`;
+        } else {
+            montant = prixUnitaire * prixParCertificat;
+            detail = `${prixUnitaire.toFixed(2)} FCFA × ${prixParCertificat.toFixed(2)} = ${montant.toFixed(2)} FCFA`;
+        }
+
         document.getElementById('montant_total').textContent = montant.toFixed(2) + " FCFA";
+        document.getElementById('calcul_detail').textContent = detail;
     }
 
-    // Mettre à jour le montant initial dès le chargement
-    document.addEventListener('DOMContentLoaded', calculerMontant);
+    // Initialiser l'affichage au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleModeCalcul();
+    });
 </script>
 {% endblock %}

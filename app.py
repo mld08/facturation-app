@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from dotenv import load_dotenv
 import os
@@ -13,15 +13,29 @@ import base64
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
-
 load_dotenv()
 app = Flask(__name__)
 application=app
 app.config['SECRET_KEY'] = 'votre-cle-secrete-ici'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 
 db = SQLAlchemy(app)
+
+class UserActivity(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    activity_type = db.Column(db.String(50), nullable=False)  # 'login', 'logout'
+    ip_address = db.Column(db.String(50), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relation avec User
+    user = db.relationship('User', backref=db.backref('activities', lazy=True))
+
+    def __repr__(self):
+        return f'<UserActivity {self.user.username} - {self.activity_type} at {self.created_at}>'
 
 # Modèle pour les utilisateurs
 class User(db.Model):
@@ -59,6 +73,9 @@ class Facture(db.Model):
     poids = db.Column(db.Text, nullable=True)
     entite = db.Column(db.String(20), nullable=False) 
     prix_unitaire = db.Column(db.Numeric(10, 2), nullable=False)
+    # Nouveaux champs ajoutés
+    mode_calcul = db.Column(db.String(20), nullable=False, default='poids')  # 'poids' ou 'certificat'
+    prix_par_certificat = db.Column(db.Numeric(10, 2), nullable=True)
     prix_total = db.Column(db.Numeric(10, 2), nullable=False)
     date_facture = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).date())
@@ -127,6 +144,39 @@ def image_to_base64(image_path):
         return None
 
 # Routes d'authentification
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'POST':
+#         username = request.form['username']
+#         password = request.form['password']
+        
+#         user = User.query.filter_by(username=username, is_active=True).first()
+        
+#         if user and user.check_password(password):
+#             session['user_id'] = user.id
+#             session['username'] = user.username
+#             session['role'] = user.role
+            
+#             flash(f'Connexion réussie! Bienvenue {user.username}', 'success')
+            
+#             # Rediriger selon le rôle
+#             if user.role == 'admin':
+#                 return redirect(url_for('index'))
+#             else:
+#                 return redirect(url_for('liste_factures'))
+#         else:
+#             flash('Nom d\'utilisateur ou mot de passe incorrect.', 'error')
+    
+#     return render_template('auth/login.html')
+
+# @app.route('/logout')
+# def logout():
+#     session.clear()
+#     flash('Vous avez été déconnecté avec succès.', 'success')
+#     return redirect(url_for('login'))
+
+# Remplacez votre route login existante par celle-ci
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -140,7 +190,18 @@ def login():
             session['username'] = user.username
             session['role'] = user.role
             
+            # Enregistrer l'activité de connexion
+            activity = UserActivity(
+                user_id=user.id,
+                activity_type='login',
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent', '')[:500]  # Limiter la taille
+            )
+            db.session.add(activity)
+            db.session.commit()
+            
             flash(f'Connexion réussie! Bienvenue {user.username}', 'success')
+            session.permanent = True
             
             # Rediriger selon le rôle
             if user.role == 'admin':
@@ -154,6 +215,17 @@ def login():
 
 @app.route('/logout')
 def logout():
+    # Enregistrer l'activité de déconnexion si l'utilisateur est connecté
+    if 'user_id' in session:
+        activity = UserActivity(
+            user_id=session['user_id'],
+            activity_type='logout',
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', '')[:500]
+        )
+        db.session.add(activity)
+        db.session.commit()
+    
     session.clear()
     flash('Vous avez été déconnecté avec succès.', 'success')
     return redirect(url_for('login'))
@@ -182,7 +254,41 @@ def index():
     mois_tries = sorted(montant_par_mois.keys())
     montants_tries = [montant_par_mois[mois] for mois in mois_tries]
 
-    return render_template('index.html', factures=factures, societes=societes, certificats=certificats, repartition_entites=repartition_entites, mois_tries=mois_tries, montants_tries=montants_tries)
+    # Date d'il y a 7 jours
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    
+    # Requête pour récupérer les connexions des 7 derniers jours
+    connexions_query = db.session.query(
+        db.func.date(UserActivity.created_at).label('date'),
+        db.func.count(UserActivity.id).label('count')
+    ).filter(
+        UserActivity.activity_type == 'login',
+        UserActivity.created_at >= seven_days_ago
+    ).group_by(
+        db.func.date(UserActivity.created_at)
+    ).order_by('date').all()
+
+    # Créer un dictionnaire avec toutes les dates des 7 derniers jours
+    connexions_par_jour = {}
+    for i in range(7):
+        date = (datetime.now(timezone.utc) - timedelta(days=6-i)).date()
+        connexions_par_jour[date.strftime('%Y-%m-%d')] = 0
+
+    # Remplir avec les données réelles
+    for date, count in connexions_query:
+        connexions_par_jour[date.strftime('%Y-%m-%d')] = count
+
+    # Dernières connexions (10 dernières)
+    dernieres_connexions = db.session.query(
+        UserActivity, User
+    ).join(User).filter(
+        UserActivity.activity_type == 'login'
+    ).order_by(
+        UserActivity.created_at.desc()
+    ).limit(10).all()
+
+    return render_template('index.html', today=today, factures=factures, societes=societes, certificats=certificats, repartition_entites=repartition_entites, mois_tries=mois_tries, montants_tries=montants_tries, connexions_par_jour=connexions_par_jour, dernieres_connexions=dernieres_connexions)
 
 @app.route('/factures')
 @login_required
@@ -205,17 +311,23 @@ def nouvelle_facture():
         # Récupération des données du formulaire
         societe_id = int(request.form['societe_id'])
         nombre_certificats = int(request.form['nombre_certificats'])
-        poids = Decimal(request.form['poids'])
         entite = request.form['entite']
-
-        # Récupérer les objets
+        mode_calcul = request.form['mode_calcul']
+        
+        # Récupérer l'objet société
         societe = Societe.query.get(societe_id)
 
-        # Utilisation d’un prix unitaire fictif (ou à ajouter dans Certificat)
-        prix_unitaire = Decimal(request.form['prix_unitaire'])  # Ajuste ou récupère depuis `certificat`
-
-        prix_total = prix_unitaire * poids
-        
+        # Calcul selon le mode choisi
+        if mode_calcul == 'poids':
+            poids = Decimal(request.form['poids'])
+            prix_unitaire = Decimal(request.form['prix_unitaire'])
+            prix_total = prix_unitaire * poids
+            prix_par_certificat = None
+        else:  # mode_calcul == 'certificat'
+            prix_unitaire = Decimal(request.form['prix_unitaire'])
+            prix_par_certificat = Decimal(request.form['prix_par_certificat'])
+            prix_total = prix_unitaire * prix_par_certificat
+            poids = request.form.get('poids', '')  # Optionnel pour ce mode
 
         # Création de la facture
         facture = Facture(
@@ -223,12 +335,15 @@ def nouvelle_facture():
             nom_societe=societe.nom_societe,
             societe_id=societe_id,
             nombre_certificats=nombre_certificats,
-            poids=str(poids),
+            poids=str(poids) if poids else '',
             entite=entite,
+            mode_calcul=mode_calcul,
             prix_unitaire=prix_unitaire,
+            prix_par_certificat=prix_par_certificat,
             prix_total=prix_total,
             date_facture=datetime.strptime(request.form['date_facture'], '%Y-%m-%d')
         )
+
 
         db.session.add(facture)
         db.session.commit()
@@ -253,23 +368,34 @@ def modifier_facture(id):
     if request.method == 'POST':
         societe_id = int(request.form['societe_id'])
         nombre_certificats = int(request.form['nombre_certificats'])
-        poids = Decimal(request.form['poids'])
-        prix_unitaire = Decimal(request.form['prix_unitaire'])
+        entite = request.form['entite']
+        mode_calcul = request.form['mode_calcul']
 
         # Récupération de la société
         societe = Societe.query.get(societe_id)
 
-        # Recalcul du prix total
-        prix_total = prix_unitaire * poids
+        # Calcul selon le mode choisi
+        if mode_calcul == 'poids':
+            poids = Decimal(request.form['poids'])
+            prix_unitaire = Decimal(request.form['prix_unitaire'])
+            prix_total = prix_unitaire * poids
+            prix_par_certificat = None
+        else:  # mode_calcul == 'certificat'
+            prix_unitaire = Decimal(request.form['prix_unitaire'])
+            prix_par_certificat = Decimal(request.form['prix_par_certificat'])
+            prix_total = prix_unitaire * prix_par_certificat
+            poids = request.form.get('poids', '')
 
         # Mise à jour de la facture
         facture.nom_societe = societe.nom_societe
         facture.societe_id = societe_id
         facture.nombre_certificats = nombre_certificats
-        facture.poids = str(poids)
+        facture.poids = str(poids) if poids else ''
+        facture.entite = entite
+        facture.mode_calcul = mode_calcul
         facture.prix_unitaire = prix_unitaire
+        facture.prix_par_certificat = prix_par_certificat
         facture.prix_total = prix_total
-        facture.entite = request.form['entite']
         facture.date_facture = datetime.strptime(request.form['date_facture'], '%Y-%m-%d')
         facture.updated_at = datetime.utcnow()
 
