@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
@@ -12,6 +12,7 @@ import mimetypes
 import base64
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import pandas as pd
 
 load_dotenv()
 app = Flask(__name__)
@@ -145,39 +146,6 @@ def image_to_base64(image_path):
         return None
 
 # Routes d'authentification
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         username = request.form['username']
-#         password = request.form['password']
-        
-#         user = User.query.filter_by(username=username, is_active=True).first()
-        
-#         if user and user.check_password(password):
-#             session['user_id'] = user.id
-#             session['username'] = user.username
-#             session['role'] = user.role
-            
-#             flash(f'Connexion réussie! Bienvenue {user.username}', 'success')
-            
-#             # Rediriger selon le rôle
-#             if user.role == 'admin':
-#                 return redirect(url_for('index'))
-#             else:
-#                 return redirect(url_for('liste_factures'))
-#         else:
-#             flash('Nom d\'utilisateur ou mot de passe incorrect.', 'error')
-    
-#     return render_template('auth/login.html')
-
-# @app.route('/logout')
-# def logout():
-#     session.clear()
-#     flash('Vous avez été déconnecté avec succès.', 'success')
-#     return redirect(url_for('login'))
-
-# Remplacez votre route login existante par celle-ci
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -519,7 +487,7 @@ def nouveau_certificat():
         certificat = Certificat(
             numero_certificat=request.form['numero_certificat'],
             nombre_certificats=Decimal(request.form['nombre_certificats']),
-            poids_certifie_kg=Decimal(request.form['poids_certifie_kg']),
+            poids_certifie_kg=Decimal(request.form['poids_certifie_kg']) if request.form['poids_certifie_kg'] else None,
             date_facture=datetime.strptime(request.form['date_facture'], '%Y-%m-%d')
         )
         db.session.add(certificat)
@@ -537,7 +505,7 @@ def modifier_certificat(id_certificat):
     if request.method == 'POST':
         certificat.numero_certificat = request.form['numero_certificat']
         certificat.nombre_certificats = Decimal(request.form['nombre_certificats'])
-        certificat.poids_certifie_kg = Decimal(request.form['poids_certifie_kg'])
+        certificat.poids_certifie_kg = Decimal(request.form['poids_certifie_kg']) if request.form['poids_certifie_kg'] else None,
         certificat.date_facture = datetime.strptime(request.form['date_facture'], '%Y-%m-%d')
         db.session.commit()
         flash('Certificat modifié avec succès!', 'success')
