@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from dotenv import load_dotenv
-import os
+import os, io
 from sqlalchemy import DECIMAL
 from collections import Counter, defaultdict
 from xhtml2pdf import pisa 
@@ -72,7 +72,7 @@ class Facture(db.Model):
     numero_facture = db.Column(db.String(50), unique=True, nullable=False)
     nom_societe = db.Column(db.Text, nullable=False)
     nombre_certificats = db.Column(db.Integer, nullable=False)
-    poids = db.Column(db.Text, nullable=True)
+    poids = db.Column(db.Integer, nullable=True)
     entite = db.Column(db.String(20), nullable=False) 
     prix_unitaire = db.Column(db.Numeric(10, 2), nullable=False)
     # Nouveaux champs ajoutés
@@ -265,6 +265,40 @@ def liste_factures():
     factures = Facture.query.order_by(Facture.created_at.desc()).all()
     return render_template('factures/liste.html', factures=factures)
 
+@app.route('/export-factures')
+@admin_required
+def export_factures():
+    factures = Facture.query.all()
+    
+    # Convertir les données en DataFrame
+    data = []
+    for facture in factures:
+        data.append({
+            'Numéro de Facture': facture.numero_facture,
+            'Date de Facture': facture.date_facture.strftime('%Y-%m-%d'),
+            'Société': facture.nom_societe,
+            'Nombre de Certificats': facture.nombre_certificats,
+            'Poids (kg)': facture.poids if facture.poids else 'N/A',
+            'Entité': facture.entite,
+            'Prix Unitaire': str(facture.prix_unitaire),
+            'Prix par Certificat': str(facture.prix_par_certificat) if facture.prix_par_certificat else 'N/A',
+            'Prix Total': str(facture.prix_total)
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # Exporter en Excel
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output, engine='openpyxl')
+    df.to_excel(writer, index=False, sheet_name='Factures')
+    writer.close() # Use close() for newer pandas versions
+    output.seek(0)
+    
+    return send_file(output, 
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         as_attachment=True,
+                         download_name='factures.xlsx')
+
 @app.route('/factures/nouvelle', methods=['GET', 'POST'])
 @login_required
 def nouvelle_facture():
@@ -296,7 +330,7 @@ def nouvelle_facture():
             prix_unitaire = Decimal(request.form['prix_unitaire'])
             prix_par_certificat = Decimal(request.form['prix_par_certificat'])
             prix_total = prix_unitaire * prix_par_certificat
-            poids = request.form.get('poids', '')  # Optionnel pour ce mode
+            poids = request.form.get('poids', None)  # Optionnel pour ce mode
 
         # Création de la facture
         facture = Facture(
@@ -304,7 +338,7 @@ def nouvelle_facture():
             nom_societe=societe.nom_societe,
             societe_id=societe_id,
             nombre_certificats=nombre_certificats,
-            poids=str(poids) if poids else '',
+            poids=poids if poids else None,
             entite=entite,
             mode_calcul=mode_calcul,
             prix_unitaire=prix_unitaire,
@@ -353,13 +387,13 @@ def modifier_facture(id):
             prix_unitaire = Decimal(request.form['prix_unitaire'])
             prix_par_certificat = Decimal(request.form['prix_par_certificat'])
             prix_total = prix_unitaire * prix_par_certificat
-            poids = request.form.get('poids', '')
+            poids = request.form.get('poids', None)
 
         # Mise à jour de la facture
         facture.nom_societe = societe.nom_societe
         facture.societe_id = societe_id
         facture.nombre_certificats = nombre_certificats
-        facture.poids = str(poids) if poids else ''
+        facture.poids = poids if poids else None
         facture.entite = entite
         facture.mode_calcul = mode_calcul
         facture.prix_unitaire = prix_unitaire
@@ -430,6 +464,35 @@ def liste_societes():
     societes = Societe.query.all()
     return render_template('societes/liste.html', societes=societes)
 
+@app.route('/export-societes')
+@admin_required
+def export_societes():
+    societes = Societe.query.all()
+    
+    # Convertir les données en DataFrame
+    data = []
+    for societe in societes:
+        data.append({
+            'Nom Société': societe.nom_societe,
+            'Adresse': societe.adresse_societe,
+            'Téléphone': societe.telephone_societe,
+            'Email': societe.email_societe
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # Exporter en Excel
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output, engine='openpyxl')
+    df.to_excel(writer, index=False, sheet_name='Sociétés')
+    writer.close() # Use close() for newer pandas versions
+    output.seek(0)
+    
+    return send_file(output, 
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         as_attachment=True,
+                         download_name='societes.xlsx')
+
 @app.route('/societes/nouvelle', methods=['GET', 'POST'])
 @login_required
 def nouvelle_societe():
@@ -479,6 +542,35 @@ def supprimer_societe(id):
 def liste_certificats():
     certificats = Certificat.query.all()
     return render_template('certificats/liste.html', certificats=certificats)
+
+@app.route('/export-certificats')
+@admin_required
+def export_certificats():
+    certificats = Certificat.query.all()
+    
+    # Convertir les données en DataFrame
+    data = []
+    for certificat in certificats:
+        data.append({
+            'Numéro Certificat': certificat.numero_certificat,
+            'Nombre de Certificats': certificat.nombre_certificats,
+            'Poids Certifié (kg)': certificat.poids_certifie_kg if certificat.poids_certifie_kg else 'N/A',
+            'Date Facture': certificat.date_facture.strftime('%Y-%m-%d') if certificat.date_facture else 'N/A'
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # Exporter en Excel
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output, engine='openpyxl')
+    df.to_excel(writer, index=False, sheet_name='Certificats')
+    writer.close() # Use close() for newer pandas versions
+    output.seek(0)
+    
+    return send_file(output, 
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         as_attachment=True,
+                         download_name='certificats.xlsx')
 
 @app.route('/certificats/nouveau', methods=['GET', 'POST'])
 @login_required
