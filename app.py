@@ -19,7 +19,6 @@ app = Flask(__name__)
 application=app
 app.config['SECRET_KEY'] = 'votre-cle-secrete-ici'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://digbdspc_facturation:Adp1fidx2003@localhost:3306/digbdspc_facturation'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=15)
 
