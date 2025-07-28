@@ -45,7 +45,7 @@
                 <label class="flex items-center">
                     <input type="radio" name="mode_calcul" value="certificat" onchange="toggleModeCalcul()"
                            class="mr-2 text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm font-medium text-gray-700">Calcul par certificat (Prix unitaire × Prix par certificat)</span>
+                    <span class="text-sm font-medium text-gray-700">Calcul par certificat (Nombre certificats × Prix par certificat)</span>
                 </label>
             </div>
         </div>
@@ -55,7 +55,7 @@
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Détail de la Facture</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div id="champ_prix_unitaire">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Prix unitaire (FCFA)</label>
                     <input type="number" name="prix_unitaire" id="prix_unitaire" required step="0.01" min="0"
                            oninput="calculerMontant()"
@@ -64,7 +64,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de certificats</label>
-                    <input type="number" name="nombre_certificats" required min="1" value="1"
+                    <input type="number" name="nombre_certificats" id="nombre_certificats" required min="1" value="1"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
@@ -81,7 +81,7 @@
                 <!-- Champ Prix par certificat (masqué par défaut) -->
                 <div id="champ_prix_certificat" style="display: none;">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Prix par certificat <span class="text-red-500">*</span>
+                        Prix par certificat (FCFA)<span class="text-red-500">*</span>
                     </label>
                     <input type="number" name="prix_par_certificat" id="prix_par_certificat" step="0.01" min="0"
                            oninput="calculerMontant()"
@@ -129,10 +129,12 @@
     function toggleModeCalcul() {
         const modeRadios = document.querySelectorAll('input[name="mode_calcul"]');
         const modePoids = document.getElementById('champ_poids');
+        const modePrixUnitaire = document.getElementById('champ_prix_unitaire');
         const modeCertificat = document.getElementById('champ_prix_certificat');
         const modeAffiche = document.getElementById('mode_affiche');
         const poidsInput = document.getElementById('poids');
         const prixCertificatInput = document.getElementById('prix_par_certificat');
+        const prixUnitaireInput = document.getElementById('prix_unitaire');
         
         let modeSelectionne = '';
         modeRadios.forEach(radio => {
@@ -144,6 +146,7 @@
         if (modeSelectionne === 'poids') {
             modePoids.style.display = 'block';
             modeCertificat.style.display = 'none';
+            modePrixUnitaire.style.display = 'block';
             modeAffiche.textContent = 'Par poids';
             
             // Rendre le poids obligatoire et le prix par certificat optionnel
@@ -151,6 +154,7 @@
             prixCertificatInput.required = false;
             prixCertificatInput.value = '';
         } else {
+            modePrixUnitaire.style.display = 'none';
             modePoids.style.display = 'none';
             modeCertificat.style.display = 'block';
             modeAffiche.textContent = 'Par certificat';
@@ -158,6 +162,7 @@
             // Rendre le prix par certificat obligatoire et le poids optionnel
             poidsInput.required = false;
             prixCertificatInput.required = true;
+            prixUnitaireInput.required = false;
         }
         
         calculerMontant();
@@ -168,6 +173,7 @@
         const prixUnitaire = parseFloat(document.getElementById('prix_unitaire').value) || 0;
         const poids = parseFloat(document.getElementById('poids').value) || 0;
         const prixParCertificat = parseFloat(document.getElementById('prix_par_certificat').value) || 0;
+        const nombreCertificats = parseInt(document.getElementById('nombre_certificats').value) || 1;
         
         let modeSelectionne = '';
         modeRadios.forEach(radio => {
@@ -183,8 +189,8 @@
             montant = prixUnitaire * poids;
             detail = `${prixUnitaire.toFixed(2)} FCFA × ${poids.toFixed(2)} kg = ${montant.toFixed(2)} FCFA`;
         } else {
-            montant = prixUnitaire * prixParCertificat;
-            detail = `${prixUnitaire.toFixed(2)} FCFA × ${prixParCertificat.toFixed(2)} = ${montant.toFixed(2)} FCFA`;
+            montant = nombreCertificats * prixParCertificat;
+            detail = `${nombreCertificats} × ${prixParCertificat.toFixed(2)} FCFA = ${montant.toFixed(2)} FCFA`;
         }
 
         document.getElementById('montant_total').textContent = montant.toFixed(2) + " FCFA";

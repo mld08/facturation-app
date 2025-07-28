@@ -74,7 +74,7 @@ class Facture(db.Model):
     nombre_certificats = db.Column(db.Integer, nullable=False)
     poids = db.Column(db.Integer, nullable=True)
     entite = db.Column(db.String(20), nullable=False) 
-    prix_unitaire = db.Column(db.Numeric(10, 2), nullable=False)
+    prix_unitaire = db.Column(db.Numeric(10, 2), nullable=True)
     # Nouveaux champs ajoutés
     mode_calcul = db.Column(db.String(20), nullable=False, default='poids')  # 'poids' ou 'certificat'
     prix_par_certificat = db.Column(db.Numeric(10, 2), nullable=True)
@@ -161,7 +161,7 @@ def login():
             
             # Enregistrer l'activité de connexion
             activity = UserActivity(
-                user_id=user.id,
+                user_id=user.id, 
                 activity_type='login',
                 ip_address=request.remote_addr,
                 user_agent=request.headers.get('User-Agent', '')[:500]  # Limiter la taille
@@ -327,9 +327,9 @@ def nouvelle_facture():
             prix_total = prix_unitaire * poids
             prix_par_certificat = None
         else:  # mode_calcul == 'certificat'
-            prix_unitaire = Decimal(request.form['prix_unitaire'])
+            prix_unitaire = request.form.get('prix_unitaire', None)
             prix_par_certificat = Decimal(request.form['prix_par_certificat'])
-            prix_total = prix_unitaire * prix_par_certificat
+            prix_total = nombre_certificats * prix_par_certificat
             poids = request.form.get('poids', None)  # Optionnel pour ce mode
 
         # Création de la facture
@@ -341,7 +341,7 @@ def nouvelle_facture():
             poids=poids if poids else None,
             entite=entite,
             mode_calcul=mode_calcul,
-            prix_unitaire=prix_unitaire,
+            prix_unitaire=prix_unitaire if mode_calcul == 'poids' else None,
             prix_par_certificat=prix_par_certificat,
             prix_total=prix_total,
             date_facture=datetime.strptime(request.form['date_facture'], '%Y-%m-%d')
@@ -384,10 +384,10 @@ def modifier_facture(id):
             prix_total = prix_unitaire * poids
             prix_par_certificat = None
         else:  # mode_calcul == 'certificat'
-            prix_unitaire = Decimal(request.form['prix_unitaire'])
+            prix_unitaire = None
             prix_par_certificat = Decimal(request.form['prix_par_certificat'])
-            prix_total = prix_unitaire * prix_par_certificat
-            poids = request.form.get('poids', None)
+            prix_total = Decimal(nombre_certificats) * prix_par_certificat
+            poids = None
 
         # Mise à jour de la facture
         facture.nom_societe = societe.nom_societe
@@ -396,7 +396,7 @@ def modifier_facture(id):
         facture.poids = poids if poids else None
         facture.entite = entite
         facture.mode_calcul = mode_calcul
-        facture.prix_unitaire = prix_unitaire
+        facture.prix_unitaire = prix_unitaire if mode_calcul == 'poids' else None
         facture.prix_par_certificat = prix_par_certificat
         facture.prix_total = prix_total
         facture.date_facture = datetime.strptime(request.form['date_facture'], '%Y-%m-%d')

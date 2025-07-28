@@ -72,12 +72,14 @@
                         </th>
                         {% else %}
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Quantité Certificats
+                            Prix par Certificat
                         </th>
                         {% endif %}
+                        {% if facture.mode_calcul == 'poids' %}
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Prix Unitaire
                         </th>
+                        {% endif %}
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Montant
                         </th>
@@ -103,9 +105,11 @@
                             {{ facture.prix_par_certificat }}
                         </td>
                         {% endif %}
+                        {% if facture.mode_calcul == 'poids' %}
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ "{:,.2f}".format(facture.prix_unitaire) }} FCFA
                         </td>
+                        {% endif %}
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ "{:,.2f}".format(facture.prix_total) }} FCFA
                         </td>

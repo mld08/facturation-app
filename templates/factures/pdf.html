@@ -86,12 +86,20 @@
             min-width: 180px;
         }
 
+        /* Container pour centrer le tableau */
+        .table-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
         table {
-            width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            margin: 20px 0;
             page-break-inside: avoid;
+            /* Largeur automatique basée sur le contenu */
+            width: auto;
+            min-width: 60%;
         }
 
         th,
@@ -100,6 +108,8 @@
             padding: 12px 8px;
             text-align: center;
             vertical-align: middle;
+            /* Largeur minimale pour chaque cellule */
+            min-width: 120px;
         }
 
         th {
@@ -111,11 +121,13 @@
 
         .first-column {
             text-align: left;
-            width: 25%;
+            /* Colonne plus large pour le nom de société */
+            min-width: 200px;
         }
 
         .number-column {
-            width: 18.75%;
+            /* Colonnes numériques plus étroites */
+            min-width: 150px;
         }
 
         .right-align {
@@ -280,50 +292,66 @@
         </p>
     </div>
 
-    <table class="facture-table">
-        <thead>
-            <tr>
-                <th class="first-column">Nom de la Société</th>
-                <th class="number-column">Nombre de certificats</th>
-                {% if facture.mode_calcul == 'certificat' %}
-                <th class="number-column">Quantité par certificat</th>
-                {% else %}
-                <th class="number-column">Poids (kg)</th>
-                {% endif %}
-                <th class="number-column">Prix unitaire</th>
-                <th class="number-column">Prix total</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="first-column">
-                    {% if facture.societe and facture.societe.nom_societe %}
-                    {{ facture.societe.nom_societe }}
-                    {% elif facture.nom_societe %}
-                    {{ facture.nom_societe }}
+    <!-- Container pour centrer le tableau -->
+    <div class="table-container">
+        <table class="facture-table">
+            <thead>
+                <tr>
+                    <th class="first-column">Nom de la Société</th>
+                    <th class="number-column">Nombre de certificats</th>
+                    {% if facture.mode_calcul == 'certificat' %}
+                    <th class="number-column">Prix par certificat</th>
                     {% else %}
-                    <span class="error-text">[Société non définie]</span>
+                    <th class="number-column">Poids (kg)</th>
                     {% endif %}
-                </td>
-                <td>{{ facture.nombre_certificats if facture.nombre_certificats else '-' }}</td>
-                {% if facture.mode_calcul == 'certificat' %}
-                <td>{{ facture.prix_par_certificat if facture.prix_par_certificat else '-' }}</td>
-                {% else %}
-                <td>{{ facture.poids if facture.poids else '-' }}</td>
-                {% endif %}
-                <td>{{ "{:,.0f}".format(facture.prix_unitaire).replace(',', ' ') if facture.prix_unitaire else '0' }} FCFA</td>
-                <td class="montant">{{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else '0' }} FCFA</td>
-            </tr>
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="4" class="right-align">Montant Total :</td>
-                <td class="montant">
-                    {{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else '0' }} FCFA
-                </td>
-            </tr>
-        </tfoot>
-    </table>
+                    {% if facture.mode_calcul == 'poids' %}
+                    <th class="number-column">Prix unitaire</th>
+                    {% endif %}
+                    <th class="number-column">Prix total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="first-column">
+                        {% if facture.societe and facture.societe.nom_societe %}
+                        {{ facture.societe.nom_societe }}
+                        {% elif facture.nom_societe %}
+                        {{ facture.nom_societe }}
+                        {% else %}
+                        <span class="error-text">[Société non définie]</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ facture.nombre_certificats if facture.nombre_certificats else '-' }}</td>
+                    {% if facture.mode_calcul == 'certificat' %}
+                    <td>{{ facture.prix_par_certificat if facture.prix_par_certificat else '-' }}</td>
+                    {% else %}
+                    <td>{{ facture.poids if facture.poids else '-' }}</td>
+                    {% endif %}
+                    {% if facture.mode_calcul == 'poids' %}
+                    <td>{{ "{:,.0f}".format(facture.prix_unitaire).replace(',', ' ') if facture.prix_unitaire else '0'
+                        }} FCFA</td>
+                    {% endif %}
+                    <td class="montant">{{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total
+                        else '0' }} FCFA</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    {% if facture.mode_calcul == 'poids' %}
+                    <td colspan="4" class="right-align">Montant Total :</td>
+                    <td class="montant">
+                        {{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else '0' }} FCFA
+                    </td>
+                    {% else %}
+                    <td colspan="3" class="right-align">Montant Total :</td>
+                    <td class="montant">
+                        {{ "{:,.0f}".format(facture.prix_total).replace(',', ' ') if facture.prix_total else '0' }} FCFA
+                    </td>
+                    {% endif %}
+                </tr>
+            </tfoot>
+        </table>
+    </div>
 
     <!-- Signature alignée à droite -->
     <div class="signature">
