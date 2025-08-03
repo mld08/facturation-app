@@ -54,10 +54,11 @@
         }
 
         .logo-img {
-            width: 50px;
+            width: 40px;
             height: auto;
             display: block;
-            margin: 5px 0;
+            margin: 0;
+            padding: 0;
         }
 
         .date {
@@ -113,10 +114,8 @@
         }
 
         th {
-            background-color: #193cff;
             font-weight: bold;
             font-size: 13px;
-            color: white;
         }
 
         .first-column {
@@ -154,6 +153,7 @@
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 40px;
+            margin-top: 50px;
             text-align: right;
         }
 
@@ -166,6 +166,7 @@
 
         .signature-text {
             font-size: 12px;
+            color: white;
         }
 
         .footer-separator {
@@ -207,7 +208,7 @@
 
 <body>
 
-    <div class="header">
+    <!-- <div class="header">
         <div class="header-left">
             <p class="title">République du Sénégal</p>
             <p class="subtitle"><em>Un Peuple – Un But – Une Foi</em></p>
@@ -237,7 +238,54 @@
                 {% endif %}
             </p>
         </div>
+    </div> -->
+
+    <!-- En-tête aligné gauche/droite -->
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; border: none;">
+        <tr>
+            <!-- Colonne gauche : texte -->
+            <td
+                style="vertical-align: top; text-align: center; font-size: 14px; line-height: 1.4; width: 33%; border: none;">
+                <strong>République du Sénégal</strong><br>
+                <em>Un Peuple – Un But – Une Foi</em><br>
+                ★★★★★<br><img src="{{ signature_base64 }}" alt="Signature" style="width: 30px; height: auto;"><br>
+                MINISTÈRE DES PÊCHES ET<br> DE L'ECONOMIE MARITIME<br>
+                ★★★★★<br>
+                Direction de la Protection et de la<br>
+                Surveillance des Pêches (DPSP)
+            </td>
+
+            <td style="vertical-align: top; width: 33%; border: none;">
+                
+            </td>
+
+            <!-- Colonne droite : logo -->
+            <td style="vertical-align: top; text-align: right; width: 33%; border: none; margin-top: 40%;">
+                {% if logo_base64 %}
+                <img src="{{ logo_base64 }}" alt="Logo DPSP" style="width: 60px; height: auto;">
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <!-- Titre FACTURE centré avec numéro -->
+    <table style="width: 100%; border-collapse: collapse; border: none;">
+        <tr>
+            <td style="width: 33%; border: none;"></td>
+            <td style="width: 33%; border: none; text-align: center; font-size: 30px; font-weight: bold;">FACTURE</td>
+            <td style="width: 33%; border: none; text-align: right; font-size: 15px; font-weight: bold;"><span style="color: red; text-align:right;">
+            N° {% if facture.numero_facture %}{{ facture.numero_facture }}{% else %}[Non défini]{% endif %}
+        </span></td>
+        </tr>
+    </table>
+
+    <!-- Date alignée à droite -->
+    <div style="text-align: right; font-size: 14px; margin-bottom: 20px;">
+        Dakar, le {% if facture.date_facture %}{{ date_facture_fr }}{% else %}[Date non
+        définie]{% endif %}
     </div>
+
+
 
     <div class="info-societe">
         <p>
@@ -274,7 +322,7 @@
             <span class="error-text">[Email non défini]</span>
             {% endif %}
         </p>
-        <p>
+        <!-- <p>
             <span class="info-label">Facture Numéro :</span>
             {% if facture.numero_facture %}
             {{ facture.numero_facture }}
@@ -289,11 +337,11 @@
             {% else %}
             <span class="error-text">[Date non définie]</span>
             {% endif %}
-        </p>
+        </p> -->
     </div>
 
     <!-- Container pour centrer le tableau -->
-    <div class="table-container">
+    <div class="table-container" style="margin-bottom: 30px;">
         <table class="facture-table">
             <thead>
                 <tr>

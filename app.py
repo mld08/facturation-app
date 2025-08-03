@@ -7,6 +7,7 @@ import os, io
 from sqlalchemy import DECIMAL
 from collections import Counter, defaultdict
 from xhtml2pdf import pisa 
+from babel.dates import format_date
 from io import BytesIO
 import mimetypes
 import base64
@@ -84,6 +85,7 @@ class Facture(db.Model):
     
     # Clé étrangère
     societe_id = db.Column(db.Integer, db.ForeignKey('societe.id'), nullable=True)
+    certificat_id = db.Column(db.Integer, db.ForeignKey('certificat.id_certificat'), nullable=True)  # NOUVEAU
 
 class Certificat(db.Model):
     id_certificat = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -91,6 +93,9 @@ class Certificat(db.Model):
     nombre_certificats = db.Column(db.Integer, nullable=False)
     poids_certifie_kg = db.Column(db.Text, nullable=True)
     date_facture = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc).date())
+
+    # Relation avec Facture
+    factures = db.relationship('Facture', backref='certificat', lazy=True)
 
 
 # Décorateurs pour l'authentification
@@ -312,12 +317,14 @@ def nouvelle_facture():
 
         # Récupération des données du formulaire
         societe_id = int(request.form['societe_id'])
+        certificat_id = int(request.form['certificat_id'])
         nombre_certificats = int(request.form['nombre_certificats'])
         entite = request.form['entite']
         mode_calcul = request.form['mode_calcul']
         
         # Récupérer l'objet société
         societe = Societe.query.get(societe_id)
+        certificat = Certificat.query.get(certificat_id)
 
         # Calcul selon le mode choisi
         if mode_calcul == 'poids':
@@ -336,8 +343,11 @@ def nouvelle_facture():
             numero_facture=str(nouveau_numero),
             nom_societe=societe.nom_societe,
             societe_id=societe_id,
-            nombre_certificats=nombre_certificats,
-            poids=poids if poids else None,
+            certificat_id=certificat_id,
+            nombre_certificats=certificat.nombre_certificats,
+            poids=certificat.poids_certifie_kg,
+            # nombre_certificats=nombre_certificats,
+            # poids=poids if poids else None,
             entite=entite,
             mode_calcul=mode_calcul,
             prix_unitaire=prix_unitaire if mode_calcul == 'poids' else None,
@@ -354,7 +364,11 @@ def nouvelle_facture():
         return redirect(url_for('voir_facture', id=facture.id))
 
     societes = Societe.query.all()
-    return render_template('factures/nouveau.html', societes=societes, datetime=datetime)
+    certificats = Certificat.query.all()
+    if not certificats:
+        #print("Aucun certificat disponible pour la création de facture.")
+        flash("Aucun certificat disponible en ce moment", "warning")
+    return render_template('factures/nouveau.html', societes=societes, certificats=certificats, datetime=datetime)
 
 @app.route('/factures/<int:id>')
 @login_required
@@ -369,12 +383,14 @@ def modifier_facture(id):
 
     if request.method == 'POST':
         societe_id = int(request.form['societe_id'])
+        certificat_id = int(request.form['certificat_id'])
         nombre_certificats = int(request.form['nombre_certificats'])
         entite = request.form['entite']
         mode_calcul = request.form['mode_calcul']
 
         # Récupération de la société
         societe = Societe.query.get(societe_id)
+        certificat = Certificat.query.get(certificat_id)
 
         # Calcul selon le mode choisi
         if mode_calcul == 'poids':
@@ -391,8 +407,11 @@ def modifier_facture(id):
         # Mise à jour de la facture
         facture.nom_societe = societe.nom_societe
         facture.societe_id = societe_id
-        facture.nombre_certificats = nombre_certificats
-        facture.poids = poids if poids else None
+        facture.certificat_id = certificat_id
+        facture.nombre_certificats = certificat.nombre_certificats
+        facture.poids = certificat.poids_certifie_kg
+        # facture.nombre_certificats = nombre_certificats
+        # facture.poids = poids if poids else None
         facture.entite = entite
         facture.mode_calcul = mode_calcul
         facture.prix_unitaire = prix_unitaire if mode_calcul == 'poids' else None
@@ -407,7 +426,8 @@ def modifier_facture(id):
         return redirect(url_for('voir_facture', id=facture.id))
 
     societes = Societe.query.all()
-    return render_template('factures/modifier.html', facture=facture, societes=societes, datetime=datetime)
+    certificats = Certificat.query.all()
+    return render_template('factures/modifier.html', facture=facture, societes=societes, certificats=certificats, datetime=datetime)
 
 @app.route('/factures/<int:id>/supprimer', methods=['POST'])
 @admin_required 
@@ -430,11 +450,11 @@ def generer_pdf(id):
     logo_base64 = image_to_base64(logo_path) if os.path.exists(logo_path) else None
     signature_base64 = image_to_base64(signature_path) if os.path.exists(signature_path) else None
 
-    
+    date_facture_fr = format_date(facture.date_facture, format='d MMMM yyyy', locale='fr')
     
     # Rendu du template HTML
     html = render_template('factures/pdf.html', facture=facture, logo_base64=logo_base64,
-                         signature_base64=signature_base64)
+                         signature_base64=signature_base64, date_facture_fr=date_facture_fr)
     
     # Créer un buffer
     result = BytesIO()
@@ -455,6 +475,7 @@ def generer_pdf(id):
         return response
     
     return "Erreur lors de la génération du PDF", 500
+
 
 # Routes pour la gestion des sociétés
 @app.route('/societes')
